@@ -17,8 +17,17 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.LUMA_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt }), // Ensure the request body format is correct
+      body: JSON.stringify({ prompt }),
     });
 
     if (!response.ok) {
-      throw new Error(`Luma API Error: ${response.statusText} (
+      throw new Error(`Luma API Error: ${response.statusText} (Status: ${response.status})`);
+    }
+
+    const data = await response.json();
+    res.status(200).json({ result: data });
+  } catch (error) {
+    console.error("Luma API Error:", error);
+    res.status(500).json({ error: "Luma Labs API request failed", details: error.message });
+  }
+}
