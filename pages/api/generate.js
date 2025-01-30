@@ -4,13 +4,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt } = req.body;
+    const { prompt, type } = req.body;
 
-    if (!prompt) {
-      return res.status(400).json({ error: "Missing prompt parameter" });
+    if (!prompt || !type) {
+      return res.status(400).json({ error: "Missing prompt or type parameter" });
     }
 
-    const response = await fetch("https://api.lumalabs.ai/dream-machine/v1/generations/image", {
+    // Determine API endpoint
+    const endpoint = type === "video"
+      ? "https://api.luma.ai/dream-machine/v1/generations/video"  // Corrected endpoint
+      : "https://api.luma.ai/dream-machine/v1/generations/image"; // Corrected endpoint
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -25,9 +30,15 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    console.log("Luma API Response:", data); // 🔍 Log this to check the format
+    console.log("Luma API Response:", data); // 🔍 Debugging log
 
-    res.status(200).json({ result: data });
+    // Ensure correct key structure in response
+    const result = {
+      image_url: data.image_url || null,
+      video_url: data.video_url || null,
+    };
+
+    res.status(200).json({ result });
   } catch (error) {
     console.error("Luma API Error:", error);
     res.status(500).json({ error: "Luma Labs API request failed", details: error.message });
