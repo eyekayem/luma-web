@@ -25,6 +25,8 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
+    console.log("Luma API Response:", data); // 🔍 Log this to check the format
+
     res.status(200).json({ result: data });
   } catch (error) {
     console.error("Luma API Error:", error);
