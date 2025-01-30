@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     }
 
     const url = type === "video" 
-        ? "https://api.luma.ai/generate/video" 
-        : "https://api.luma.ai/generate";
+        ? "https://api.luma-labs.ai/generate/video" 
+        : "https://api.luma-labs.ai/generate";
 
     const response = await fetch(url, {
         method: "POST",
