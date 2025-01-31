@@ -76,11 +76,11 @@ export default function Home() {
   return (
     <div className="flex min-h-screen bg-black text-white p-10 items-center justify-center">
       {/* Container */}
-      <div className="flex w-full max-w-6xl bg-gray-900 shadow-lg rounded-xl p-8 space-x-8">
+      <div className="flex w-full max-w-6xl bg-gray-900 shadow-lg rounded-xl p-8">
         
         {/* LEFT SIDE: INPUTS */}
-        <div className="w-1/3 flex flex-col space-y-4">
-          <h1 className="text-2xl font-bold text-center">Magic Cinema Playground</h1>
+        <div className="w-1/3 flex flex-col space-y-6">
+          <h1 className="text-3xl font-bold text-center mb-4">Magic Cinema Playground</h1>
           
           <textarea
             className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none border border-gray-700 focus:border-blue-500 transition-all"
@@ -117,7 +117,7 @@ export default function Home() {
         </div>
 
         {/* RIGHT SIDE: MEDIA PREVIEW */}
-        <div className="w-2/3 flex flex-col space-y-6">
+        <div className="w-2/3 flex flex-col space-y-6 pl-8">
           
           {/* Image Previews with Placeholders */}
           <div className="flex justify-center space-x-4">
