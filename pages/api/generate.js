@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     }
 
     const API_KEY = process.env.LUMA_API_KEY;
-    const IMAGE_ENDPOINT = "https://api.luma.ai/dream-machine/v1/generations/image";
-    const VIDEO_ENDPOINT = "https://api.luma.ai/dream-machine/v1/generations/video";
+    const IMAGE_ENDPOINT = "https://api.lumalabs.ai/dream-machine/v1/generations/image";
+    const VIDEO_ENDPOINT = "https://api.lumalabs.ai/dream-machine/v1/generations/video";
 
     // Step 1: Generate First Image
     const firstImageRes = await fetch(IMAGE_ENDPOINT, {
