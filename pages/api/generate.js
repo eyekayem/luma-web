@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const IMAGE_ENDPOINT = "https://api.lumalabs.ai/dream-machine/v1/generations/image";
     const VIDEO_ENDPOINT = "https://api.lumalabs.ai/dream-machine/v1/generations/video";
 
-    // Step 1: Generate First Image
+    console.log("🔹 Sending First Image Request...");
     const firstImageRes = await fetch(IMAGE_ENDPOINT, {
       method: "POST",
       headers: {
@@ -25,11 +25,14 @@ export default async function handler(req, res) {
     });
 
     const firstImageData = await firstImageRes.json();
+    console.log("✅ First Image Response:", firstImageData);
+
     if (!firstImageRes.ok || !firstImageData.image_url) {
-      throw new Error("Failed to generate first image");
+      console.error("🚨 First Image Generation Failed:", firstImageData);
+      return res.status(500).json({ error: "First Image API request failed", details: firstImageData });
     }
 
-    // Step 2: Generate Last Image
+    console.log("🔹 Sending Last Image Request...");
     const lastImageRes = await fetch(IMAGE_ENDPOINT, {
       method: "POST",
       headers: {
@@ -40,11 +43,14 @@ export default async function handler(req, res) {
     });
 
     const lastImageData = await lastImageRes.json();
+    console.log("✅ Last Image Response:", lastImageData);
+
     if (!lastImageRes.ok || !lastImageData.image_url) {
-      throw new Error("Failed to generate last image");
+      console.error("🚨 Last Image Generation Failed:", lastImageData);
+      return res.status(500).json({ error: "Last Image API request failed", details: lastImageData });
     }
 
-    // Step 3: Generate Video using the first and last images
+    console.log("🔹 Sending Video Request...");
     const videoRes = await fetch(VIDEO_ENDPOINT, {
       method: "POST",
       headers: {
@@ -59,18 +65,20 @@ export default async function handler(req, res) {
     });
 
     const videoData = await videoRes.json();
+    console.log("✅ Video Response:", videoData);
+
     if (!videoRes.ok || !videoData.video_url) {
-      throw new Error("Failed to generate video");
+      console.error("🚨 Video Generation Failed:", videoData);
+      return res.status(500).json({ error: "Video API request failed", details: videoData });
     }
 
-    // Return all media links
     res.status(200).json({
       firstImage: firstImageData.image_url,
       lastImage: lastImageData.image_url,
       video: videoData.video_url,
     });
   } catch (error) {
-    console.error("Luma API Error:", error);
+    console.error("🚨 API Error:", error);
     res.status(500).json({ error: "Luma Labs API request failed", details: error.message });
   }
 }
