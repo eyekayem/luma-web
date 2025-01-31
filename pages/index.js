@@ -8,27 +8,35 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [jobIds, setJobIds] = useState(null);
 
-  useEffect(() => {
-    if (jobIds) {
-      const interval = setInterval(async () => {
-        const response = await fetch(
-          `/api/status?firstImageJobId=${jobIds.firstImageJobId}&lastImageJobId=${jobIds.lastImageJobId}&videoPrompt=${jobIds.videoPrompt}`
-        );
-        const data = await response.json();
+useEffect(() => {
+  if (jobIds) {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      if (attempts >= 30) {  // Stop polling after 5 minutes
+        clearInterval(interval);
+        return;
+      }
 
-        if (data.status === "video_processing") {
-          setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
-          setJobIds({ ...jobIds, videoJobId: data.videoJobId });
-        } else if (data.status === "completed") {
-          setMedia({ ...media, video: data.video });
-          setJobIds(null);
-          clearInterval(interval);
-        }
-      }, 5000);
+      const response = await fetch(
+        `/api/status?firstImageJobId=${jobIds.firstImageJobId}&lastImageJobId=${jobIds.lastImageJobId}&videoJobId=${jobIds.videoJobId || ""}&videoPrompt=${jobIds.videoPrompt}`
+      );
+      const data = await response.json();
 
-      return () => clearInterval(interval);
-    }
-  }, [jobIds]);
+      if (data.status === "video_processing") {
+        setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
+        setJobIds({ ...jobIds, videoJobId: data.videoJobId }); // ✅ Save the videoJobId
+      } else if (data.status === "completed") {
+        setMedia({ ...media, video: data.video });
+        setJobIds(null);
+        clearInterval(interval);
+      }
+
+      attempts++;  // Keep track of attempts
+    }, 10000);  // Poll every 10s
+
+    return () => clearInterval(interval);
+  }
+}, [jobIds]);
 
   const generateMedia = async (e) => {
     e.preventDefault();
