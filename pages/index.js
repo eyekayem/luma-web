@@ -8,48 +8,40 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [jobIds, setJobIds] = useState(null);
 
-useEffect(() => {
-  if (jobIds) {
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      if (attempts >= 30) {  // Stop polling after 5 minutes
-        clearInterval(interval);
-        return;
-      }
-
-      const response = await fetch(
-        `/api/status?firstImageJobId=${jobIds.firstImageJobId}&lastImageJobId=${jobIds.lastImageJobId}&videoJobId=${jobIds.videoJobId || ""}&videoPrompt=${jobIds.videoPrompt}`
-      );
-      const data = await response.json();
-
-      if (data.status === "video_processing") {
-        setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
-
-        // ✅ Save videoJobId **only if it's newly assigned**
-        if (!jobIds.videoJobId && data.videoJobId) {
-          console.log("✅ Saving videoJobId for future checks:", data.videoJobId);
-          setJobIds({ ...jobIds, videoJobId: data.videoJobId });
+  useEffect(() => {
+    if (jobIds) {
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        if (attempts >= 30) {  // Stop polling after 5 minutes
+          clearInterval(interval);
+          return;
         }
-      } else if (data.status === "completed") {
-        setMedia({ ...media, video: data.video });
-        setJobIds(null);
-        clearInterval(interval);
-      }
 
-      attempts++;  // 🔄 Keep track of attempts
-    }, 10000);  // Poll every 10s
+        const response = await fetch(
+          `/api/status?firstImageJobId=${jobIds.firstImageJobId}&lastImageJobId=${jobIds.lastImageJobId}&videoJobId=${jobIds.videoJobId || ""}&videoPrompt=${jobIds.videoPrompt}`
+        );
+        const data = await response.json();
 
-    return () => clearInterval(interval);
-  }
-}, [jobIds]);
+        if (data.status === "video_processing") {
+          setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
 
+          // ✅ Save videoJobId **only if it's newly assigned**
+          if (!jobIds.videoJobId && data.videoJobId) {
+            console.log("✅ Saving videoJobId for future checks:", data.videoJobId);
+            setJobIds((prevJobIds) => ({ ...prevJobIds, videoJobId: data.videoJobId }));
+          }
+        } else if (data.status === "completed") {
+          setMedia({ ...media, video: data.video });
+          setJobIds(null);
+          clearInterval(interval);
+        }
 
-      attempts++;  // Keep track of attempts
-    }, 10000);  // Poll every 10s
+        attempts++;  // 🔄 Keep track of attempts
+      }, 10000);  // Poll every 10s
 
-    return () => clearInterval(interval);
-  }
-}, [jobIds]);
+      return () => clearInterval(interval);
+    }
+  }, [jobIds]);  // ✅ Fixed brackets
 
   const generateMedia = async (e) => {
     e.preventDefault();
