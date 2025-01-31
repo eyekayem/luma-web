@@ -24,12 +24,25 @@ useEffect(() => {
 
       if (data.status === "video_processing") {
         setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
-        setJobIds({ ...jobIds, videoJobId: data.videoJobId }); // ✅ Save the videoJobId
+
+        // ✅ Save videoJobId **only if it's newly assigned**
+        if (!jobIds.videoJobId && data.videoJobId) {
+          console.log("✅ Saving videoJobId for future checks:", data.videoJobId);
+          setJobIds({ ...jobIds, videoJobId: data.videoJobId });
+        }
       } else if (data.status === "completed") {
         setMedia({ ...media, video: data.video });
         setJobIds(null);
         clearInterval(interval);
       }
+
+      attempts++;  // 🔄 Keep track of attempts
+    }, 10000);  // Poll every 10s
+
+    return () => clearInterval(interval);
+  }
+}, [jobIds]);
+
 
       attempts++;  // Keep track of attempts
     }, 10000);  // Poll every 10s
