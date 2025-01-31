@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ Check if images are done
+    // ✅ Check if images are ready
     const firstImageJob = await client.generations.get(firstImageJobId);
     const lastImageJob = await client.generations.get(lastImageJobId);
 
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const firstImageUrl = firstImageJob.assets.image;
     const lastImageUrl = lastImageJob.assets.image;
 
-    // ✅ If video job exists, return it instead of creating a new one
+    // ✅ If video job is already in progress, return its ID instead of creating a new one
     if (videoJobId) {
       console.log("🔄 Checking existing video job:", videoJobId);
       const videoJob = await client.generations.get(videoJobId);
@@ -40,11 +40,11 @@ export default async function handler(req, res) {
         });
       } else {
         console.log("⏳ Video still processing...");
-        return res.status(202).json({ status: "video_processing" });
+        return res.status(202).json({ status: "video_processing", videoJobId });
       }
     }
 
-    // ✅ Submit video job ONLY if no videoJobId exists
+    // ✅ Only create a new video job **if no job has been started**
     console.log("🟢 Submitting video job...");
     const videoResponse = await client.generations.create({
       prompt: videoPrompt,
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     console.log("✅ Video Job Submitted:", videoResponse.id);
     return res.status(202).json({
       status: "video_processing",
-      videoJobId: videoResponse.id,
+      videoJobId: videoResponse.id,  // ✅ Ensure frontend stores this!
       firstImage: firstImageUrl,
       lastImage: lastImageUrl,
     });
