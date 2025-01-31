@@ -24,8 +24,8 @@ export default function Home() {
       });
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
       const data = await response.json();
+
       setMedia({
         firstImage: data.firstImage,
         lastImage: data.lastImage,
@@ -40,65 +40,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
-      <h1 className="text-2xl font-bold mb-4">Magic Cinema</h1>
-      <form onSubmit={generateMedia} className="w-full max-w-2xl space-y-4">
-        <input
-          type="text"
-          placeholder="First Image Prompt"
-          className="w-full p-2 rounded bg-gray-700 text-white"
-          value={firstImagePrompt}
-          onChange={(e) => setFirstImagePrompt(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Last Image Prompt"
-          className="w-full p-2 rounded bg-gray-700 text-white"
-          value={lastImagePrompt}
-          onChange={(e) => setLastImagePrompt(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Action & Camera Move Prompt"
-          className="w-full p-2 rounded bg-gray-700 text-white"
-          value={videoPrompt}
-          onChange={(e) => setVideoPrompt(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full p-2 bg-blue-500 rounded disabled:bg-gray-600"
-          disabled={loading}
-        >
-          {loading ? "Generating..." : "Generate Media"}
-        </button>
+    <div className="container">
+      <h1>Magic Cinema</h1>
+      <form onSubmit={generateMedia}>
+        <input type="text" placeholder="First Image Prompt" value={firstImagePrompt} onChange={(e) => setFirstImagePrompt(e.target.value)} required />
+        <input type="text" placeholder="Last Image Prompt" value={lastImagePrompt} onChange={(e) => setLastImagePrompt(e.target.value)} required />
+        <input type="text" placeholder="Action & Camera Move Prompt" value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} required />
+        <button type="submit" disabled={loading}>{loading ? "Generating..." : "Generate"}</button>
       </form>
 
-      {media.firstImage && (
-        <div className="mt-4">
-          <h2 className="text-lg font-bold mb-2">First Image:</h2>
-          <img src={media.firstImage} alt="First Image" className="rounded-lg shadow-lg w-full" />
-        </div>
-      )}
-
-      {media.lastImage && (
-        <div className="mt-4">
-          <h2 className="text-lg font-bold mb-2">Last Image:</h2>
-          <img src={media.lastImage} alt="Last Image" className="rounded-lg shadow-lg w-full" />
-        </div>
-      )}
-
-      {media.video && (
-        <div className="mt-4">
-          <h2 className="text-lg font-bold mb-2">Generated Video:</h2>
-          <video controls className="rounded-lg shadow-lg w-full">
-            <source src={media.video} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      )}
+      {media.firstImage && <img src={media.firstImage} alt="First Image" />}
+      {media.lastImage && <img src={media.lastImage} alt="Last Image" />}
+      {media.video && <video controls><source src={media.video} type="video/mp4" /></video>}
     </div>
   );
 }
