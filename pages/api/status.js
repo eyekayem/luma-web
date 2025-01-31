@@ -57,4 +57,21 @@ export default async function handler(req, res) {
     const videoResponse = await client.generations.create({
       prompt: videoPrompt,
       keyframes: {
-       
+        frame0: { type: "image", url: firstImageUrl },
+        frame1: { type: "image", url: lastImageUrl },
+      },
+    });
+
+    console.log("✅ Video job submitted:", videoResponse.id);
+    return res.status(202).json({
+      status: "video_processing",
+      videoJobId: videoResponse.id,
+      firstImage: firstImageUrl,
+      lastImage: lastImageUrl,
+    });
+
+  } catch (error) {
+    console.error("🚨 Luma AI Status Error:", error);
+    res.status(500).json({ error: "Failed to check status", details: error.message });
+  }
+}
