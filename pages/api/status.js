@@ -1,4 +1,10 @@
 import { LumaAI } from "lumaai";
+import Mux from "@mux/mux-node";
+
+const mux = new Mux({
+  tokenId: process.env.MUX_ACCESS_TOKEN_ID,
+  tokenSecret: process.env.MUX_SECRET_KEY,
+});
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -9,20 +15,9 @@ export default async function handler(req, res) {
     const { firstImageJobId, lastImageJobId, videoJobId, videoPrompt } = req.query;
     const client = new LumaAI({ authToken: process.env.LUMA_API_KEY });
 
-    // ✅ Validate input
-    if (!firstImageJobId || !lastImageJobId) {
-      return res.status(400).json({ error: "Missing image job IDs" });
-    }
-
-    console.log("🔍 Checking image jobs:", firstImageJobId, lastImageJobId);
-
-    // ✅ Check first and last image status
+    // ✅ Check image generation status
     const firstImageJob = await client.generations.get(firstImageJobId);
     const lastImageJob = await client.generations.get(lastImageJobId);
-
-    if (!firstImageJob || !lastImageJob) {
-      return res.status(404).json({ error: "One or more image jobs not found" });
-    }
 
     if (firstImageJob.state !== "completed" || lastImageJob.state !== "completed") {
       return res.status(202).json({ status: "processing" });
@@ -31,29 +26,31 @@ export default async function handler(req, res) {
     const firstImageUrl = firstImageJob.assets.image;
     const lastImageUrl = lastImageJob.assets.image;
 
-    // ✅ If a video job exists, check its status
+    // ✅ If video job exists, check status
     if (videoJobId) {
-      console.log("🔍 Checking video job:", videoJobId);
       const videoJob = await client.generations.get(videoJobId);
+      if (videoJob.state === "completed") {
+        const videoUrl = videoJob.assets.video;
 
-      if (videoJob && videoJob.state === "completed") {
-        console.log("🎬 Video completed:", videoJob.assets.video);
+        // ✅ Upload the video to Mux
+        const upload = await mux.video.assets.create({
+          input: videoUrl,
+          playback_policy: ["public"],
+          mp4_support: "standard",
+        });
+
         return res.status(200).json({
           status: "completed",
           firstImage: firstImageUrl,
           lastImage: lastImageUrl,
-          video: videoJob.assets.video,
+          video: videoUrl,
+          muxPlaybackId: upload.playback_ids[0]?.id, // Save this for Mux playback
         });
       }
       return res.status(202).json({ status: "video_processing", videoJobId });
     }
 
-    // ✅ If no video job exists, start a new one
-    if (!videoPrompt) {
-      return res.status(400).json({ error: "Missing video prompt" });
-    }
-
-    console.log("🎥 Submitting new video job...");
+    // ✅ Start a new video generation job if needed
     const videoResponse = await client.generations.create({
       prompt: videoPrompt,
       keyframes: {
@@ -62,7 +59,6 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log("✅ Video job submitted:", videoResponse.id);
     return res.status(202).json({
       status: "video_processing",
       videoJobId: videoResponse.id,
@@ -71,7 +67,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("🚨 Luma AI Status Error:", error);
+    console.error("🚨 LumaAI Status Error:", error);
     res.status(500).json({ error: "Failed to check status", details: error.message });
   }
 }
