@@ -1,84 +1,102 @@
 import { useState } from "react";
 
-export default function ChatPage() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+export default function Home() {
+  const [firstImagePrompt, setFirstImagePrompt] = useState("");
+  const [lastImagePrompt, setLastImagePrompt] = useState("");
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [media, setMedia] = useState({ firstImage: null, lastImage: null, video: null });
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState(null);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const generateMedia = async (e) => {
+    e.preventDefault();
     setLoading(true);
-
-    const userMessage = { role: "user", content: input };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setMedia({ firstImage: null, lastImage: null, video: null });
 
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({
+          firstImagePrompt,
+          lastImagePrompt,
+          videoPrompt,
+        }),
       });
 
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
       const data = await response.json();
-      console.log("API Response:", data); // Log response to check format
-
-      // Assuming Luma Labs returns an `image_url` key
-      if (data.result && data.result.image_url) {
-        setImageUrl(data.result.image_url);
-      }
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { role: "assistant", content: "Here is your image:", image: data.result.image_url },
-      ]);
+      setMedia({
+        firstImage: data.firstImage,
+        lastImage: data.lastImage,
+        video: data.video,
+      });
     } catch (error) {
-      console.error("Chat API Error:", error);
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { role: "assistant", content: "Error: Unable to process request" },
-      ]);
+      console.error("API Error:", error);
+      alert("Error generating media. Check console for details.");
     }
 
-    setInput("");
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-6">
-      <h1 className="text-2xl font-bold mb-4">Chat with BKLT</h1>
-      <div className="w-full max-w-2xl bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col space-y-3 overflow-y-auto h-[60vh]">
-        {messages.map((msg, index) => (
-          <div key={index} className={`p-2 rounded-md ${msg.role === "user" ? "bg-blue-600 self-end" : "bg-gray-700 self-start"}`}>
-            {msg.content}
-            {msg.image && <img src={msg.image} alt="Generated" className="mt-2 rounded-lg" />}
-          </div>
-        ))}
-        {loading && <div className="text-gray-400">Thinking...</div>}
-      </div>
-      <div className="w-full max-w-2xl flex mt-4">
+      <h1 className="text-2xl font-bold mb-4">Magic Cinema</h1>
+      <form onSubmit={generateMedia} className="w-full max-w-2xl space-y-4">
         <input
           type="text"
-          className="flex-1 p-2 rounded-l-lg bg-gray-700 text-white outline-none"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="First Image Prompt"
+          className="w-full p-2 rounded bg-gray-700 text-white"
+          value={firstImagePrompt}
+          onChange={(e) => setFirstImagePrompt(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Last Image Prompt"
+          className="w-full p-2 rounded bg-gray-700 text-white"
+          value={lastImagePrompt}
+          onChange={(e) => setLastImagePrompt(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Action & Camera Move Prompt"
+          className="w-full p-2 rounded bg-gray-700 text-white"
+          value={videoPrompt}
+          onChange={(e) => setVideoPrompt(e.target.value)}
+          required
         />
         <button
-          className="px-4 py-2 bg-blue-500 rounded-r-lg disabled:bg-gray-600"
-          onClick={sendMessage}
+          type="submit"
+          className="w-full p-2 bg-blue-500 rounded disabled:bg-gray-600"
           disabled={loading}
         >
-          Send
+          {loading ? "Generating..." : "Generate Media"}
         </button>
-      </div>
-      {imageUrl && (
+      </form>
+
+      {media.firstImage && (
         <div className="mt-4">
-          <h2 className="text-lg font-bold mb-2">Generated Image:</h2>
-          <img src={imageUrl} alt="Generated" className="rounded-lg shadow-lg" />
+          <h2 className="text-lg font-bold mb-2">First Image:</h2>
+          <img src={media.firstImage} alt="First Image" className="rounded-lg shadow-lg w-full" />
+        </div>
+      )}
+
+      {media.lastImage && (
+        <div className="mt-4">
+          <h2 className="text-lg font-bold mb-2">Last Image:</h2>
+          <img src={media.lastImage} alt="Last Image" className="rounded-lg shadow-lg w-full" />
+        </div>
+      )}
+
+      {media.video && (
+        <div className="mt-4">
+          <h2 className="text-lg font-bold mb-2">Generated Video:</h2>
+          <video controls className="rounded-lg shadow-lg w-full">
+            <source src={media.video} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       )}
     </div>
