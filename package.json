@@ -14,6 +14,8 @@
     "postcss": "^8.0.0",
     "autoprefixer": "^10.0.0",
     "mux-node": "^4.0.0",
-    "lumaai": "^1.0.0"
+    "lumaai": "^1.0.0",
+    "@mux/mux-node": "^1.0.0",     
+    "@mux/mux-player-react": "^1.0.0" 
   }
 }
