@@ -75,6 +75,14 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-white p-10 items-center justify-center">
+
+    {/* 🔵 Tailwind Debugging Block */}
+    <div className="bg-blue-500 text-white p-4 mb-4 rounded-lg">
+      If this is blue, Tailwind works!
+    </div>
+
+
+    
       {/* Container */}
       <div className="flex flex-col w-full max-w-6xl bg-gray-800 shadow-lg rounded-lg p-8 space-y-8">
         <h1 className="text-3xl font-bold text-center">Magic Cinema Playground</h1>
