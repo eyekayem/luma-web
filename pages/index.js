@@ -7,6 +7,15 @@ export default function Home() {
   const [media, setMedia] = useState({ firstImage: null, lastImage: null, video: null });
   const [loading, setLoading] = useState(false);
   const [jobIds, setJobIds] = useState(null);
+  const [gallery, setGallery] = useState([]); // ✅ Stores generated items
+
+  // ✅ Load gallery from localStorage when the page loads
+  useEffect(() => {
+    const storedGallery = JSON.parse(localStorage.getItem("gallery"));
+    if (storedGallery) {
+      setGallery(storedGallery);
+    }
+  }, []);
 
   useEffect(() => {
     if (jobIds) {
@@ -26,13 +35,28 @@ export default function Home() {
           setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
 
           if (!jobIds.videoJobId && data.videoJobId) {
-            console.log("✅ Saving videoJobId:", data.videoJobId);
             setJobIds((prevJobIds) => ({ ...prevJobIds, videoJobId: data.videoJobId }));
           }
         } else if (data.status === "completed") {
           setMedia({ ...media, video: data.video });
           setJobIds(null);
           clearInterval(interval);
+
+          // ✅ Add the result to the gallery
+          const newEntry = {
+            firstImagePrompt,
+            lastImagePrompt,
+            videoPrompt,
+            firstImage: data.firstImage,
+            lastImage: data.lastImage,
+            video: data.video,
+          };
+
+          const updatedGallery = [newEntry, ...gallery];
+
+          // ✅ Save updated gallery to localStorage
+          setGallery(updatedGallery);
+          localStorage.setItem("gallery", JSON.stringify(updatedGallery));
         }
 
         attempts++;
@@ -57,6 +81,12 @@ export default function Home() {
         }),
       });
 
+      if (response.status === 402) {
+        alert("🚨 Insufficient credits in Luma AI. Please check your account.");
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
 
@@ -65,6 +95,7 @@ export default function Home() {
         lastImageJobId: data.lastImageJobId,
         videoPrompt: data.videoPrompt,
       });
+
     } catch (error) {
       console.error("API Error:", error);
       alert("Error generating media. Check console for details.");
@@ -74,9 +105,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white p-10 items-center justify-center">
-    
-      {/* Container */}
+    <div className="flex flex-col items-center min-h-screen bg-gray-900 text-white p-10">
+      {/* Main Container */}
       <div className="flex flex-col w-full max-w-6xl bg-gray-800 shadow-lg rounded-lg p-8 space-y-8">
         <h1 className="text-3xl font-bold text-center">Magic Cinema Playground</h1>
         
@@ -85,7 +115,7 @@ export default function Home() {
           {/* LEFT SIDE: INPUTS */}
           <div className="w-1/3 flex flex-col space-y-6">
             <textarea
-              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg outline-none border border-gray-600 focus:border-blue-500 transition-all"
+              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg border border-gray-600 focus:border-blue-500 transition-all"
               rows="3"
               placeholder="First Image Prompt"
               value={firstImagePrompt}
@@ -93,7 +123,7 @@ export default function Home() {
               required
             />
             <textarea
-              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg outline-none border border-gray-600 focus:border-blue-500 transition-all"
+              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg border border-gray-600 focus:border-blue-500 transition-all"
               rows="3"
               placeholder="Last Image Prompt"
               value={lastImagePrompt}
@@ -101,7 +131,7 @@ export default function Home() {
               required
             />
             <textarea
-              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg outline-none border border-gray-600 focus:border-blue-500 transition-all"
+              className="w-full p-4 rounded-lg bg-gray-700 text-white text-lg border border-gray-600 focus:border-blue-500 transition-all"
               rows="3"
               placeholder="Action & Camera Move Prompt"
               value={videoPrompt}
@@ -152,6 +182,21 @@ export default function Home() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ✅ Gallery Section */}
+      <div className="w-full max-w-6xl mt-10">
+        <h2 className="text-2xl font-bold text-center mb-4">Gallery</h2>
+        <div className="grid grid-cols-3 gap-6">
+          {gallery.map((item, index) => (
+            <div key={index} className="bg-gray-800 p-4 rounded-lg shadow-lg">
+              <p className="text-gray-400 text-sm">{item.firstImagePrompt} → {item.lastImagePrompt}</p>
+              <img src={item.firstImage} alt="Gallery First" className="w-full rounded-lg mt-2" />
+              <img src={item.lastImage} alt="Gallery Last" className="w-full rounded-lg mt-2" />
+              {item.video && <video controls className="w-full rounded-lg mt-2"><source src={item.video} type="video/mp4" /></video>}
+            </div>
+          ))}
         </div>
       </div>
     </div>
