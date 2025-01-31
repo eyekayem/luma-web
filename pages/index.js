@@ -185,20 +185,38 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ✅ Gallery Section */}
-      <div className="w-full max-w-6xl mt-10">
-        <h2 className="text-2xl font-bold text-center mb-4">Gallery</h2>
-        <div className="grid grid-cols-3 gap-6">
-          {gallery.map((item, index) => (
-            <div key={index} className="bg-gray-800 p-4 rounded-lg shadow-lg">
-              <p className="text-gray-400 text-sm">{item.firstImagePrompt} → {item.lastImagePrompt}</p>
-              <img src={item.firstImage} alt="Gallery First" className="w-full rounded-lg mt-2" />
-              <img src={item.lastImage} alt="Gallery Last" className="w-full rounded-lg mt-2" />
-              {item.video && <video controls className="w-full rounded-lg mt-2"><source src={item.video} type="video/mp4" /></video>}
-            </div>
-          ))}
-        </div>
+{/* ✅ Gallery Section */}
+<div className="w-full max-w-6xl mt-10">
+  <h2 className="text-2xl font-bold text-center mb-4">Gallery</h2>
+  <div className="grid grid-cols-3 gap-6">
+    {gallery.map((item, index) => (
+      <div key={index} className="bg-gray-800 p-4 rounded-lg shadow-lg">
+        {/* Prompt Title */}
+        <p className="text-gray-400 text-sm">{item.firstImagePrompt} → {item.lastImagePrompt}</p>
+        
+        {/* First Image */}
+        <img src={item.firstImage} alt="Gallery First" className="w-full rounded-lg mt-2" />
+
+        {/* Last Image */}
+        <img src={item.lastImage} alt="Gallery Last" className="w-full rounded-lg mt-2" />
+
+        {/* ✅ Only show Action & Camera Move Prompt if it exists */}
+        {item.videoPrompt && (
+          <p className="text-gray-300 text-center italic my-2">
+            "{item.videoPrompt}"
+          </p>
+        )}
+
+        {/* Video */}
+        {item.video && (
+          <video controls className="w-full rounded-lg mt-2">
+            <source src={item.video} type="video/mp4" />
+          </video>
+        )}
       </div>
-    </div>
+    ))}
+  </div>
+</div>
+
   );
 }
