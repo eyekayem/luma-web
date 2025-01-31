@@ -16,22 +16,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Request first image generation
-    const firstImageJob = await client.generations.image.create({
+    // ✅ Request first image generation
+    const firstImageJob = await client.generations.create({
       prompt: firstImagePrompt,
+      type: "image", // Ensures it's an image generation request
     });
 
-    // Request last image generation
-    const lastImageJob = await client.generations.image.create({
+    // ✅ Request last image generation
+    const lastImageJob = await client.generations.create({
       prompt: lastImagePrompt,
+      type: "image",
     });
 
-    // Return job IDs immediately for frontend polling
+    // ✅ Return job IDs immediately for frontend polling
     res.status(202).json({
       firstImageJobId: firstImageJob.id,
       lastImageJobId: lastImageJob.id,
-      videoPrompt: videoPrompt, // Save this for later
+      videoPrompt, // Keep this for video generation
     });
+
   } catch (error) {
     console.error("🚨 Luma AI API Error:", error);
     res.status(500).json({ error: "Failed to submit job to Luma AI", details: error.message });
