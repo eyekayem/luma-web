@@ -1,4 +1,3 @@
-import { LumaAI } from "lumaai";
 import Mux from "@mux/mux-node";
 
 const mux = new Mux({
@@ -15,7 +14,7 @@ export default async function handler(req, res) {
     const { firstImageJobId, lastImageJobId, videoJobId, videoPrompt } = req.query;
     const client = new LumaAI({ authToken: process.env.LUMA_API_KEY });
 
-    // ✅ Check image generation status
+    // ✅ Check image status
     const firstImageJob = await client.generations.get(firstImageJobId);
     const lastImageJob = await client.generations.get(lastImageJobId);
 
@@ -32,19 +31,21 @@ export default async function handler(req, res) {
       if (videoJob.state === "completed") {
         const videoUrl = videoJob.assets.video;
 
-        // ✅ Upload the video to Mux
-        const upload = await mux.video.assets.create({
+        // ✅ Upload Luma video to Mux
+        const muxAsset = await mux.video.assets.create({
           input: videoUrl,
           playback_policy: ["public"],
-          mp4_support: "standard",
+          test: false,
         });
+
+        console.log("✅ Uploaded to Mux:", muxAsset);
 
         return res.status(200).json({
           status: "completed",
           firstImage: firstImageUrl,
           lastImage: lastImageUrl,
           video: videoUrl,
-          muxPlaybackId: upload.playback_ids[0]?.id, // Save this for Mux playback
+          muxPlaybackId: muxAsset.playback_ids[0].id, // ✅ Return Mux Playback ID
         });
       }
       return res.status(202).json({ status: "video_processing", videoJobId });
