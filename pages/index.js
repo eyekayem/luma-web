@@ -75,30 +75,30 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-6">
-      <h1 className="text-3xl font-bold mb-6">Magic Cinema</h1>
-      
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-10">
+      <h1 className="text-4xl font-bold mb-8">Magic Cinema</h1>
+
       {/* Form */}
-      <form onSubmit={generateMedia} className="w-full max-w-2xl space-y-4">
+      <form onSubmit={generateMedia} className="w-full max-w-3xl space-y-6">
         <textarea
-          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none"
-          rows="2"
+          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none border border-gray-700 focus:border-blue-500 transition-all"
+          rows="3"
           placeholder="First Image Prompt"
           value={firstImagePrompt}
           onChange={(e) => setFirstImagePrompt(e.target.value)}
           required
         />
         <textarea
-          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none"
-          rows="2"
+          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none border border-gray-700 focus:border-blue-500 transition-all"
+          rows="3"
           placeholder="Last Image Prompt"
           value={lastImagePrompt}
           onChange={(e) => setLastImagePrompt(e.target.value)}
           required
         />
         <textarea
-          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none"
-          rows="2"
+          className="w-full p-4 rounded-lg bg-gray-800 text-white text-lg outline-none border border-gray-700 focus:border-blue-500 transition-all"
+          rows="3"
           placeholder="Action & Camera Move Prompt"
           value={videoPrompt}
           onChange={(e) => setVideoPrompt(e.target.value)}
@@ -106,7 +106,7 @@ export default function Home() {
         />
         <button
           type="submit"
-          className="w-full p-3 bg-blue-500 rounded-lg text-lg font-semibold hover:bg-blue-600 disabled:bg-gray-600"
+          className="w-full p-4 bg-blue-600 rounded-lg text-lg font-semibold hover:bg-blue-700 disabled:bg-gray-600 transition-all"
           disabled={loading}
         >
           {loading ? "Generating..." : "Generate"}
@@ -115,16 +115,16 @@ export default function Home() {
 
       {/* Images Side by Side */}
       {media.firstImage && media.lastImage && (
-        <div className="flex justify-center mt-6 space-x-4">
-          <img src={media.firstImage} alt="First Image" className="w-1/2 rounded-lg shadow-lg" />
-          <img src={media.lastImage} alt="Last Image" className="w-1/2 rounded-lg shadow-lg" />
+        <div className="flex justify-center mt-10 space-x-6 max-w-4xl">
+          <img src={media.firstImage} alt="First Image" className="w-1/2 rounded-lg shadow-lg border border-gray-700" />
+          <img src={media.lastImage} alt="Last Image" className="w-1/2 rounded-lg shadow-lg border border-gray-700" />
         </div>
       )}
 
       {/* Video Below Images */}
       {media.video && (
-        <div className="w-full max-w-3xl mt-6">
-          <video controls className="w-full rounded-lg shadow-lg">
+        <div className="w-full max-w-4xl mt-10">
+          <video controls className="w-full rounded-lg shadow-lg border border-gray-700">
             <source src={media.video} type="video/mp4" />
           </video>
         </div>
