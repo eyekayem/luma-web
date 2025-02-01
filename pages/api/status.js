@@ -1,9 +1,13 @@
 import { LumaAI } from "lumaai";
 import Mux from "@mux/mux-node";
 
-// ✅ Initialize Mux with environment variables
-const mux = new Mux({
-  tokenId: process.env.MUX_ACCESS_TOKEN,
+// ✅ Initialize Luma and Mux clients
+const lumaClient = new LumaAI({
+  authToken: process.env.LUMA_API_KEY,
+});
+
+const muxClient = new Mux({
+  tokenId: process.env.MUX_ACCESS_TOKEN_ID,
   tokenSecret: process.env.MUX_SECRET_KEY,
 });
 
@@ -12,51 +16,68 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  // ✅ Extract job IDs and prompts
+  const { firstImageJobId, lastImageJobId, videoJobId, videoPrompt } = req.query;
+  console.log("🔍 Checking status for:", { firstImageJobId, lastImageJobId, videoJobId, videoPrompt });
+
   try {
-    const { firstImageJobId, lastImageJobId, videoJobId, videoPrompt } = req.query;
-    const client = new LumaAI({ authToken: process.env.LUMA_API_KEY });
+    // ✅ Ensure we have the required image job IDs
+    if (!firstImageJobId || !lastImageJobId) {
+      console.log("🚨 Missing image job IDs.");
+      return res.status(400).json({ error: "Missing image job IDs" });
+    }
 
-    // ✅ Check image generation status
-    const firstImageJob = await client.generations.get(firstImageJobId);
-    const lastImageJob = await client.generations.get(lastImageJobId);
-
-    if (firstImageJob.state !== "completed" || lastImageJob.state !== "completed") {
+    // ✅ Poll Luma API for first image status
+    const firstImageJob = await lumaClient.generations.get(firstImageJobId);
+    if (!firstImageJob || firstImageJob.state !== "completed") {
+      console.log("🕐 First image still processing...");
       return res.status(202).json({ status: "processing" });
     }
 
+    // ✅ Poll Luma API for last image status
+    const lastImageJob = await lumaClient.generations.get(lastImageJobId);
+    if (!lastImageJob || lastImageJob.state !== "completed") {
+      console.log("🕐 Last image still processing...");
+      return res.status(202).json({ status: "processing" });
+    }
+
+    // ✅ Get image URLs
     const firstImageUrl = firstImageJob.assets.image;
     const lastImageUrl = lastImageJob.assets.image;
+    console.log("✅ Image Generation Complete:", { firstImageUrl, lastImageUrl });
 
-    // ✅ If video job exists, check status
+    // ✅ If we already have a video job ID, check its status
     if (videoJobId) {
-      const videoJob = await client.generations.get(videoJobId);
+      console.log("🔄 Checking video status for job:", videoJobId);
+      const videoJob = await lumaClient.generations.get(videoJobId);
+      
       if (videoJob.state === "completed") {
-        const videoUrl = videoJob.assets.video;
-
-        console.log("✅ Video is ready. Uploading to Mux:", videoUrl);
-
-        // ✅ Upload to Mux
-        const upload = await mux.video.assets.create({
-          input: videoUrl,
-          playback_policy: ["public"],
-          encoding_tier: "baseline",
-        });
-
-        console.log("✅ Mux Upload Successful. Playback ID:", upload.playback_ids[0].id);
-
+        console.log("✅ Video generation completed!", videoJob.assets.video);
         return res.status(200).json({
           status: "completed",
           firstImage: firstImageUrl,
           lastImage: lastImageUrl,
-          video: videoUrl, // Keeping the Luma video for reference
-          muxPlaybackId: upload.playback_ids[0].id, // ✅ Return Mux Playback ID
+          video: videoJob.assets.video,
         });
       }
+
+      console.log("🕐 Video still processing...");
       return res.status(202).json({ status: "video_processing", videoJobId });
     }
 
-    // ✅ Start a new video generation job if needed
-    const videoResponse = await client.generations.create({
+    // ✅ Ensure videoPrompt exists before triggering video generation
+    if (!videoPrompt) {
+      console.log("🚨 No video prompt provided. Waiting...");
+      return res.status(202).json({
+        status: "waiting_for_video",
+        firstImage: firstImageUrl,
+        lastImage: lastImageUrl,
+      });
+    }
+
+    // ✅ Start a new video generation job
+    console.log("🎬 Starting video generation...");
+    const videoResponse = await lumaClient.generations.create({
       prompt: videoPrompt,
       keyframes: {
         frame0: { type: "image", url: firstImageUrl },
@@ -64,6 +85,7 @@ export default async function handler(req, res) {
       },
     });
 
+    console.log("✅ Video job submitted!", videoResponse.id);
     return res.status(202).json({
       status: "video_processing",
       videoJobId: videoResponse.id,
@@ -72,7 +94,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("🚨 LumaAI or Mux Error:", error);
-    res.status(500).json({ error: "Failed to process status", details: error.message });
+    console.error("🚨 Luma API Error:", error.message);
+    return res.status(500).json({ error: "Luma API failed", details: error.message });
   }
 }
