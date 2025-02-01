@@ -17,6 +17,6 @@
     "lumaai": "^1.0.0",
     "@mux/mux-node": "https://github:eyekayem/mux-video",     
     "@mux/mux-player-react": "^1.0.0", 
-    "next-video": "^1.0.0"
+    "next-video": "^latest"
   }
 }
