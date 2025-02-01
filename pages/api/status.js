@@ -1,5 +1,5 @@
-import { fetchLumaJobStatus } from "../../utils/luma";
-import { uploadToMux } from "../../utils/mux";
+import { fetchLumaJobStatus } from "@/utils/luma";
+import { uploadToMux } from "@/utils/mux";
 
 export default async function handler(req, res) {
   try {
