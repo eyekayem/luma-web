@@ -17,6 +17,6 @@
     "lumaai": "^1.0.0",
     "@mux/mux-node": "^4.0.0",     
     "@mux/mux-player-react": "^1.0.0", 
-    "next-video": "^latest"
+    "next-video": "latest"
   }
 }
