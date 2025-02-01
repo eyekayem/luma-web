@@ -1,9 +1,4 @@
-import Mux from "@mux/mux-node";
-
-const mux = new Mux({
-  tokenId: process.env.MUX_ACCESS_TOKEN_ID,
-  tokenSecret: process.env.MUX_SECRET_KEY,
-});
+import { LumaAI } from "lumaai";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -14,7 +9,7 @@ export default async function handler(req, res) {
     const { firstImageJobId, lastImageJobId, videoJobId, videoPrompt } = req.query;
     const client = new LumaAI({ authToken: process.env.LUMA_API_KEY });
 
-    // ✅ Check image status
+    // ✅ Step 1: Check if Luma images are ready
     const firstImageJob = await client.generations.get(firstImageJobId);
     const lastImageJob = await client.generations.get(lastImageJobId);
 
@@ -25,33 +20,21 @@ export default async function handler(req, res) {
     const firstImageUrl = firstImageJob.assets.image;
     const lastImageUrl = lastImageJob.assets.image;
 
-    // ✅ If video job exists, check status
+    // ✅ Step 2: If Luma video job exists, check its status
     if (videoJobId) {
       const videoJob = await client.generations.get(videoJobId);
       if (videoJob.state === "completed") {
-        const videoUrl = videoJob.assets.video;
-
-        // ✅ Upload Luma video to Mux
-        const muxAsset = await mux.video.assets.create({
-          input: videoUrl,
-          playback_policy: ["public"],
-          test: false,
-        });
-
-        console.log("✅ Uploaded to Mux:", muxAsset);
-
         return res.status(200).json({
           status: "completed",
           firstImage: firstImageUrl,
           lastImage: lastImageUrl,
-          video: videoUrl,
-          muxPlaybackId: muxAsset.playback_ids[0].id, // ✅ Return Mux Playback ID
+          video: videoJob.assets.video, // Still using Luma video for now
         });
       }
       return res.status(202).json({ status: "video_processing", videoJobId });
     }
 
-    // ✅ Start a new video generation job if needed
+    // 🚨 STEP 3: **DO NOT CALL MUX YET!** First, start Luma video job.
     const videoResponse = await client.generations.create({
       prompt: videoPrompt,
       keyframes: {
