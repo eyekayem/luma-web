@@ -15,7 +15,7 @@
     "autoprefixer": "^10.0.0",
     "mux-node": "^4.0.0",
     "lumaai": "^1.0.0",
-    "@mux/mux-node": "github:eyekayem/mux-video",     
+    "@mux/mux-node": "https://github:eyekayem/mux-video",     
     "@mux/mux-player-react": "^1.0.0" 
   }
 }
