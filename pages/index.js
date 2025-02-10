@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import io from "socket.io-client";
 
 export default function Home() {
   const [firstImagePrompt, setFirstImagePrompt] = useState("");
@@ -11,20 +10,23 @@ export default function Home() {
 
   useEffect(() => {
     if (jobIds) {
-      const socket = io("wss://your-vercel-deployment-url/api/ws");
+      const socket = new WebSocket("wss://your-vercel-deployment-url/api/ws");
 
-      socket.on("connect", () => {
+      socket.onopen = () => {
         console.log("WebSocket connected");
-      });
+      };
 
-      socket.on("disconnect", (reason) => {
-        console.log("WebSocket disconnected:", reason);
-        if (reason === "io server disconnect") {
-          socket.connect(); // Reconnect on server disconnect
+      socket.onclose = (event) => {
+        console.log("WebSocket disconnected:", event);
+        if (!event.wasClean) {
+          // Reconnect logic
+          console.log("Reconnecting...");
+          socket = new WebSocket("wss://your-vercel-deployment-url/api/ws");
         }
-      });
+      };
 
-      socket.on("job_completed", (data) => {
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
         if (data.jobId === jobIds.firstImageJobId) {
           setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
         } else if (data.jobId === jobIds.lastImageJobId) {
@@ -33,37 +35,15 @@ export default function Home() {
           setMedia((prevState) => ({ ...prevState, video: data.resultUrl }));
           setJobIds(null);
         }
-      });
+      };
 
-      socket.on("video_ready_to_start", (data) => {
-        setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
-        console.log("✅ Images ready, starting video job...");
-
-        const generateVideo = async () => {
-          const videoResponse = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              firstImage: data.firstImage,
-              lastImage: data.lastImage,
-              videoPrompt,
-            }),
-          });
-
-          const videoData = await videoResponse.json();
-          setJobIds((prevJobIds) => ({ ...prevJobIds, videoJobId: videoData.videoJobId }));
-        };
-
-        generateVideo();
-      });
-
-      socket.on("error", (error) => {
+      socket.onerror = (error) => {
         console.error("WebSocket error:", error);
-      });
+      };
 
       return () => {
-        socket.disconnect();
-        console.log("WebSocket disconnected on cleanup");
+        socket.close();
+        console.log("WebSocket closed on cleanup");
       };
     }
   }, [jobIds]);
