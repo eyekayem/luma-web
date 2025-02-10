@@ -22,7 +22,10 @@ export default function handler(req, res) {
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     console.log('received: %s', message);
-    ws.send(`Hello, you sent -> ${message}`);
+    // Process the message
+    const data = JSON.parse(message);
+    // Here you can add the logic to handle the prompts and generate responses
+    ws.send(`Received your message: ${message}`);
   });
 
   ws.send('Hi there, I am a WebSocket server');
