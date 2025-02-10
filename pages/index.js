@@ -13,6 +13,17 @@ export default function Home() {
     if (jobIds) {
       const socket = io("wss://your-vercel-deployment-url/api/ws");
 
+      socket.on("connect", () => {
+        console.log("WebSocket connected");
+      });
+
+      socket.on("disconnect", (reason) => {
+        console.log("WebSocket disconnected:", reason);
+        if (reason === "io server disconnect") {
+          socket.connect(); // Reconnect on server disconnect
+        }
+      });
+
       socket.on("job_completed", (data) => {
         if (data.jobId === jobIds.firstImageJobId) {
           setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
@@ -46,7 +57,14 @@ export default function Home() {
         generateVideo();
       });
 
-      return () => socket.disconnect();
+      socket.on("error", (error) => {
+        console.error("WebSocket error:", error);
+      });
+
+      return () => {
+        socket.disconnect();
+        console.log("WebSocket disconnected on cleanup");
+      };
     }
   }, [jobIds]);
 
