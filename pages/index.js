@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import io from "socket.io-client";
 
 export default function Home() {
   const [firstImagePrompt, setFirstImagePrompt] = useState("");
@@ -10,24 +11,24 @@ export default function Home() {
 
   useEffect(() => {
     if (jobIds) {
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        if (attempts >= 30) {
-          clearInterval(interval);
-          return;
+      const socket = io("wss://your-vercel-deployment-url/api/ws");
+
+      socket.on("job_completed", (data) => {
+        if (data.jobId === jobIds.firstImageJobId) {
+          setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
+        } else if (data.jobId === jobIds.lastImageJobId) {
+          setMedia((prevState) => ({ ...prevState, lastImage: data.resultUrl }));
+        } else if (data.jobId === jobIds.videoJobId) {
+          setMedia((prevState) => ({ ...prevState, video: data.resultUrl }));
+          setJobIds(null);
         }
+      });
 
-        const response = await fetch(
-          `/api/status?firstImageJobId=${jobIds.firstImageJobId}&lastImageJobId=${jobIds.lastImageJobId}&videoJobId=${jobIds.videoJobId || ""}&videoPrompt=${jobIds.videoPrompt}`
-        );
-        const data = await response.json();
+      socket.on("video_ready_to_start", (data) => {
+        setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
+        console.log("✅ Images ready, starting video job...");
 
-        if (data.status === "waiting_for_images") {
-          console.log("⏳ Waiting for images...");
-        } else if (data.status === "video_ready_to_start") {
-          setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: null });
-          console.log("✅ Images ready, starting video job...");
-
+        const generateVideo = async () => {
           const videoResponse = await fetch("/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -40,18 +41,12 @@ export default function Home() {
 
           const videoData = await videoResponse.json();
           setJobIds((prevJobIds) => ({ ...prevJobIds, videoJobId: videoData.videoJobId }));
-        } else if (data.status === "video_processing") {
-          console.log("⏳ Video is processing...");
-        } else if (data.status === "completed") {
-          setMedia({ firstImage: data.firstImage, lastImage: data.lastImage, video: data.video });
-          setJobIds(null);
-          clearInterval(interval);
-        }
+        };
 
-        attempts++;
-      }, 10000);
+        generateVideo();
+      });
 
-      return () => clearInterval(interval);
+      return () => socket.disconnect();
     }
   }, [jobIds]);
 
@@ -60,7 +55,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
