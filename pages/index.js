@@ -21,7 +21,7 @@ export default function Home() {
       console.log("WebSocket disconnected:", event);
       if (!event.wasClean) {
         console.log("Reconnecting...");
-        setSocket(new WebSocket("wss://shotgetter.vercel.app/api/ws"));
+        setSocket(new WebSocket("wss://shotgetter.vercel.app/pages/api/ws"));
       }
     };
 
