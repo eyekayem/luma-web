@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     if (jobIds) {
-      const socket = new WebSocket("wss://your-vercel-deployment-url/api/ws");
+      const socket = new WebSocket("wss://https://shotgetter.vercel.app/pages/api/ws");
 
       socket.onopen = () => {
         console.log("WebSocket connected");
