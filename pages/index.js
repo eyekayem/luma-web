@@ -10,7 +10,7 @@ export default function Home() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const socket = new WebSocket("wss://shotgetter.vercel.app/api/ws");
+    const socket = new WebSocket("wss://shotgetter.vercel.app/pages/api/ws");
 
     socket.onopen = () => {
       console.log("WebSocket connected");
