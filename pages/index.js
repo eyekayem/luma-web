@@ -10,41 +10,40 @@ export default function Home() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const socket = new WebSocket("wss://shotgetter.vercel.app/pages/api/ws");
+    const connectWebSocket = () => {
+      const socket = new WebSocket("wss://shotgetter.vercel.app/pages/api/ws");
 
-    socket.onopen = () => {
-      console.log("WebSocket connected");
-      setSocket(socket);
+      socket.onopen = () => {
+        console.log("WebSocket connected");
+        setSocket(socket);
+      };
+
+      socket.onclose = (event) => {
+        console.log("WebSocket disconnected:", event);
+        if (!event.wasClean) {
+          console.log("Reconnecting...");
+          setTimeout(connectWebSocket, 1000); // Reconnect after 1 second
+        }
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.jobId === jobIds?.firstImageJobId) {
+          setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
+        } else if (data.jobId === jobIds?.lastImageJobId) {
+          setMedia((prevState) => ({ ...prevState, lastImage: data.resultUrl }));
+        } else if (data.jobId === jobIds?.videoJobId) {
+          setMedia((prevState) => ({ ...prevState, video: data.resultUrl }));
+          setJobIds(null);
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
     };
 
-    socket.onclose = (event) => {
-      console.log("WebSocket disconnected:", event);
-      if (!event.wasClean) {
-        console.log("Reconnecting...");
-        setSocket(new WebSocket("wss://shotgetter.vercel.app/pages/api/ws"));
-      }
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.jobId === jobIds?.firstImageJobId) {
-        setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
-      } else if (data.jobId === jobIds?.lastImageJobId) {
-        setMedia((prevState) => ({ ...prevState, lastImage: data.resultUrl }));
-      } else if (data.jobId === jobIds?.videoJobId) {
-        setMedia((prevState) => ({ ...prevState, video: data.resultUrl }));
-        setJobIds(null);
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    return () => {
-      socket.close();
-      console.log("WebSocket closed on cleanup");
-    };
+    connectWebSocket();
   }, [jobIds]);
 
   const sendPrompt = () => {
