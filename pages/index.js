@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  const [firstImagePrompt, setFirstImagePrompt] = useState("");
-  const [lastImagePrompt, setLastImagePrompt] = useState("");
-  const [videoPrompt, setVideoPrompt] = useState("");
-  const [media, setMedia] = useState({ firstImage: null, lastImage: null, video: null });
-  const [loading, setLoading] = useState(false);
-  const [jobIds, setJobIds] = useState(null);
+  const [prompt, setPrompt] = useState("");
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
@@ -28,14 +23,7 @@ export default function Home() {
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.jobId === jobIds?.firstImageJobId) {
-          setMedia((prevState) => ({ ...prevState, firstImage: data.resultUrl }));
-        } else if (data.jobId === jobIds?.lastImageJobId) {
-          setMedia((prevState) => ({ ...prevState, lastImage: data.resultUrl }));
-        } else if (data.jobId === jobIds?.videoJobId) {
-          setMedia((prevState) => ({ ...prevState, video: data.resultUrl }));
-          setJobIds(null);
-        }
+        console.log("Message received from server:", data);
       };
 
       socket.onerror = (error) => {
@@ -44,15 +32,11 @@ export default function Home() {
     };
 
     connectWebSocket();
-  }, [jobIds]);
+  }, []);
 
   const sendPrompt = () => {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      const message = JSON.stringify({
-        firstImagePrompt,
-        lastImagePrompt,
-        videoPrompt,
-      });
+      const message = JSON.stringify({ prompt });
       socket.send(message);
       console.log("Prompt sent:", message);
     } else {
@@ -60,51 +44,18 @@ export default function Home() {
     }
   };
 
-  const generateMedia = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstImagePrompt,
-          lastImagePrompt,
-          videoPrompt,
-        }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      const data = await response.json();
-
-      setJobIds({
-        firstImageJobId: data.firstImageJobId,
-        lastImageJobId: data.lastImageJobId,
-        videoPrompt: data.videoPrompt,
-      });
-    } catch (error) {
-      console.error("API Error:", error);
-      alert("Error generating media. Check console for details.");
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-900 text-white p-10">
       <h1 className="text-3xl font-bold text-center">Magic Cinema Playground</h1>
-      <form className="space-y-4" onSubmit={generateMedia}>
-        <textarea placeholder="First Image Prompt" value={firstImagePrompt} onChange={(e) => setFirstImagePrompt(e.target.value)} required />
-        <textarea placeholder="Last Image Prompt" value={lastImagePrompt} onChange={(e) => setLastImagePrompt(e.target.value)} required />
-        <textarea placeholder="Action & Camera Move Prompt" value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} required />
-        <button type="submit" disabled={loading}>{loading ? "Generating..." : "Generate"}</button>
-        <button type="button" onClick={sendPrompt}>Send Prompt</button>
+      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); sendPrompt(); }}>
+        <textarea
+          placeholder="Enter your prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          required
+        />
+        <button type="submit">Send Prompt</button>
       </form>
-      <div className="mt-8">
-        {media.firstImage && <img src={media.firstImage} alt="First Image" />}
-        {media.lastImage && <img src={media.lastImage} alt="Last Image" />}
-        {media.video && <video controls src={media.video}></video>}
-      </div>
     </div>
   );
 }
