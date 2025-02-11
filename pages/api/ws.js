@@ -10,7 +10,9 @@ export default function handler(req, res) {
     res.socket.server.wss = wss;
 
     res.socket.server.on('upgrade', (request, socket, head) => {
+      console.log('Handling upgrade request');
       wss.handleUpgrade(request, socket, head, (ws) => {
+        console.log('WebSocket connection established');
         wss.emit('connection', ws, request);
       });
     });
@@ -19,11 +21,27 @@ export default function handler(req, res) {
   res.end();
 }
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request) => {
+  console.log('New WebSocket connection from', request.headers.origin);
+
   ws.on('message', (message) => {
-    console.log('received: %s', message);
-    const data = JSON.parse(message);
-    ws.send(`Received your message: ${message}`);
+    console.log('Received message:', message);
+    try {
+      const data = JSON.parse(message);
+      console.log('Parsed message data:', data);
+      ws.send(`Received your message: ${message}`);
+    } catch (error) {
+      console.error('Error parsing message:', error);
+      ws.send('Error: Invalid JSON');
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
   });
 
   ws.send('Hi there, I am a WebSocket server');
